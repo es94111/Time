@@ -1,4 +1,5 @@
 {
+
   "currentVersion": "1.1",
   "releases": [
     {
@@ -38,6 +39,11 @@
       ]
     },
     {
+
+  "currentVersion": "1.0",
+  "releases": [
+    {
+
       "version": "1.0",
       "date": "2026-07-01",
       "title": "初始發佈 — 追蹤應用程式使用時長與網站瀏覽時長",
