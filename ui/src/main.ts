@@ -5,18 +5,29 @@ import { api, errText } from "./api";
 import { toast } from "./components/list";
 import { t } from "./i18n/zh-TW";
 import { renderHistory } from "./views/history";
+import { renderMetricsHistory } from "./views/metrics-history";
+import { disposeMetricsLive, renderMetricsLive } from "./views/metrics-live";
 import { renderRange } from "./views/range";
 import { renderSettings } from "./views/settings";
 import { renderToday } from "./views/today";
 import { renderWebsites } from "./views/websites";
 
-type TabKey = "today" | "websites" | "history" | "range" | "settings";
+type TabKey =
+  | "today"
+  | "websites"
+  | "history"
+  | "range"
+  | "metricsLive"
+  | "metricsHistory"
+  | "settings";
 
 const views: Record<TabKey, (root: HTMLElement) => Promise<void>> = {
   today: renderToday,
   websites: renderWebsites,
   history: renderHistory,
   range: renderRange,
+  metricsLive: renderMetricsLive,
+  metricsHistory: renderMetricsHistory,
   settings: renderSettings,
 };
 
@@ -92,10 +103,20 @@ function renderShell(): void {
   const content = document.createElement("main");
   content.className = "content";
 
-  const tabKeys: TabKey[] = ["today", "websites", "history", "range", "settings"];
+  const tabKeys: TabKey[] = [
+    "today",
+    "websites",
+    "history",
+    "range",
+    "metricsLive",
+    "metricsHistory",
+    "settings",
+  ];
   const buttons: Partial<Record<TabKey, HTMLButtonElement>> = {};
 
   const select = async (key: TabKey): Promise<void> => {
+    // 離開即時監控時清理事件訂閱與輪詢，避免背景持續更新。
+    if (key !== "metricsLive") disposeMetricsLive();
     tabKeys.forEach((k) => buttons[k]?.classList.toggle("active", k === key));
     content.innerHTML = `<p class="muted">${t.common.loading}</p>`;
     try {

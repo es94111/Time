@@ -54,13 +54,66 @@ CREATE TABLE IF NOT EXISTS setting (
   value TEXT NOT NULL
 );
 
+-- 系統指標資料表（002-system-metrics，對應 data-model.md §3）。
+CREATE TABLE IF NOT EXISTS metric_sample (
+  id              INTEGER PRIMARY KEY,
+  ts_utc          INTEGER NOT NULL,
+  cpu_pct         REAL,
+  mem_used_bytes  INTEGER,
+  mem_total_bytes INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_metric_sample_ts ON metric_sample(ts_utc);
+
+CREATE TABLE IF NOT EXISTS disk_device (
+  id           INTEGER PRIMARY KEY,
+  identifier   TEXT NOT NULL UNIQUE,
+  display_name TEXT
+);
+CREATE TABLE IF NOT EXISTS disk_sample (
+  sample_id INTEGER NOT NULL REFERENCES metric_sample(id) ON DELETE CASCADE,
+  disk_id   INTEGER NOT NULL REFERENCES disk_device(id),
+  read_bps  INTEGER,
+  write_bps INTEGER,
+  PRIMARY KEY (sample_id, disk_id)
+);
+
+CREATE TABLE IF NOT EXISTS network_interface (
+  id           INTEGER PRIMARY KEY,
+  identifier   TEXT NOT NULL UNIQUE,
+  display_name TEXT
+);
+CREATE TABLE IF NOT EXISTS net_sample (
+  sample_id INTEGER NOT NULL REFERENCES metric_sample(id) ON DELETE CASCADE,
+  iface_id  INTEGER NOT NULL REFERENCES network_interface(id),
+  rx_bps    INTEGER,
+  tx_bps    INTEGER,
+  PRIMARY KEY (sample_id, iface_id)
+);
+
+CREATE TABLE IF NOT EXISTS gpu_device (
+  id           INTEGER PRIMARY KEY,
+  identifier   TEXT NOT NULL UNIQUE,
+  display_name TEXT
+);
+CREATE TABLE IF NOT EXISTS gpu_sample (
+  sample_id       INTEGER NOT NULL REFERENCES metric_sample(id) ON DELETE CASCADE,
+  gpu_id          INTEGER NOT NULL REFERENCES gpu_device(id),
+  util_pct        REAL,
+  mem_used_bytes  INTEGER,
+  mem_total_bytes INTEGER,
+  PRIMARY KEY (sample_id, gpu_id)
+);
+
 -- 預設設定（僅在不存在時插入）。
 INSERT OR IGNORE INTO setting(key, value) VALUES
   ('idle_threshold_sec', '300'),
   ('tracking_paused',    'false'),
   ('autostart_enabled',  'true'),
   ('master_password_set','false'),
-  ('ui_language',        'zh-TW');
+  ('ui_language',        'zh-TW'),
+  ('metrics_sample_interval_sec', '1'),
+  ('metrics_retention_days',      '30'),
+  ('metrics_enabled',             'true');
 "#;
 
 /// 加密 SQLite 連線封裝。

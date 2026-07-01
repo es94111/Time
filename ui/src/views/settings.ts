@@ -144,6 +144,63 @@ export async function renderSettings(root: HTMLElement): Promise<void> {
   };
   clearCard.append(clearBtn);
 
+  // 4.5) 指標設定（002-system-metrics）
+  const metricsCard = card(t.tabs.metricsLive);
+  const intervalLabel = document.createElement("label");
+  intervalLabel.textContent = `${t.metrics.samplingInterval}（${t.metrics.intervalHint}）`;
+  const interval = document.createElement("input");
+  interval.type = "number";
+  interval.min = "1";
+  interval.max = "3600";
+  const retentionLabel = document.createElement("label");
+  retentionLabel.textContent = `${t.metrics.retentionDays}（${t.metrics.retentionHint}）`;
+  const retention = document.createElement("input");
+  retention.type = "number";
+  retention.min = "1";
+  retention.max = "3650";
+  const enabledLabel = document.createElement("label");
+  const enabled = document.createElement("input");
+  enabled.type = "checkbox";
+  enabledLabel.append(enabled, document.createTextNode(" " + t.metrics.enabled));
+  const metricsSaveBtn = document.createElement("button");
+  metricsSaveBtn.className = "btn";
+  metricsSaveBtn.textContent = t.common.confirm;
+  metricsSaveBtn.onclick = async () => {
+    try {
+      await api.setMetricsSettings({
+        sampleIntervalSec: parseInt(interval.value, 10) || 1,
+        retentionDays: parseInt(retention.value, 10) || 30,
+        enabled: enabled.checked,
+      });
+      toast(t.settings.saved);
+    } catch (e) {
+      toast(errText(e), true);
+    }
+  };
+  const clearMetricsBtn = document.createElement("button");
+  clearMetricsBtn.className = "btn danger";
+  clearMetricsBtn.textContent = t.metrics.clearMetrics;
+  clearMetricsBtn.onclick = async () => {
+    if (!window.confirm(t.metrics.clearMetricsConfirm)) return;
+    try {
+      const r = await api.clearMetricsData();
+      toast(t.metrics.clearedMetrics(r.deletedSamples));
+    } catch (e) {
+      toast(errText(e), true);
+    }
+  };
+  metricsCard.append(
+    intervalLabel,
+    interval,
+    retentionLabel,
+    retention,
+    enabledLabel,
+    document.createElement("br"),
+    metricsSaveBtn,
+    document.createElement("br"),
+    clearMetricsBtn,
+  );
+
   // 5) 主密碼
   const pwCard = card(t.settings.masterPassword);
   const newPw = document.createElement("input");
@@ -169,13 +226,21 @@ export async function renderSettings(root: HTMLElement): Promise<void> {
   };
   pwCard.append(newPw, curPw, document.createElement("br"), pwBtn);
 
-  root.append(general, exclCard, exportCard, clearCard, pwCard);
+  root.append(general, exclCard, exportCard, clearCard, metricsCard, pwCard);
 
   // 初始載入設定值。
   try {
     const s = await api.getSettings();
     idle.value = String(s.idle_threshold_sec);
     auto.checked = s.autostart_enabled;
+  } catch (e) {
+    toast(errText(e), true);
+  }
+  try {
+    const ms = await api.getMetricsSettings();
+    interval.value = String(ms.sampleIntervalSec);
+    retention.value = String(ms.retentionDays);
+    enabled.checked = ms.enabled;
   } catch (e) {
     toast(errText(e), true);
   }

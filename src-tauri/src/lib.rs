@@ -4,6 +4,7 @@
 //! 啟動背景追蹤服務、註冊 IPC 命令。
 
 mod commands;
+mod metrics_service;
 mod state;
 mod tracking_service;
 
@@ -16,7 +17,7 @@ use tracker_core::rules::{Exclusions, DEFAULT_IDLE_THRESHOLD_MS};
 use tracker_platform::secret::DpapiSecretStore;
 use tracker_storage::{crypto, Repository};
 
-use state::{AppState, Paths, SharedControl};
+use state::{AppState, MetricsControl, Paths, SharedControl};
 
 /// 啟動應用程式。
 pub fn run() {
@@ -33,6 +34,7 @@ pub fn run() {
     let app_state = AppState {
         db,
         control,
+        metrics: Arc::new(MetricsControl::new()),
         tz,
         paths,
         secret: DpapiSecretStore::new(),
@@ -64,6 +66,12 @@ pub fn run() {
             commands::clear_data,
             commands::set_master_password,
             commands::unlock,
+            commands::get_current_metrics,
+            commands::get_metrics_range,
+            commands::list_metric_devices,
+            commands::get_metrics_settings,
+            commands::set_metrics_settings,
+            commands::clear_metrics_data,
         ])
         .on_window_event(|window, event| {
             // 關閉主視窗即最小化至系統匣（背景常駐，FR-002）。
@@ -80,7 +88,12 @@ pub fn run() {
             let protected = crypto::is_password_protected(&st.paths.key).unwrap_or(false);
             if !protected {
                 match tracking_service::open_and_start(&st, None) {
-                    Ok(()) => sync_autostart(&st),
+                    Ok(()) => {
+                        sync_autostart(&st);
+                        drop(st);
+                        // 資料庫就緒後啟動背景指標取樣（002-system-metrics）。
+                        metrics_service::start(app.handle());
+                    }
                     Err(e) => eprintln!("開啟資料庫失敗：{e}"),
                 }
             }

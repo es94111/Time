@@ -6,14 +6,19 @@ use std::path::Path;
 use std::sync::atomic::Ordering;
 
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, State};
 use tracker_core::aggregation::{DaySummary, RangeSummary};
+use tracker_core::metrics::MetricSnapshot;
 use tracker_core::rules::Exclusions;
 use tracker_core::time;
 use tracker_storage::export::{self, ExportResult, Format};
+use tracker_storage::metrics_repo::{
+    DeviceLists, MetricsRepo, MetricsSettings, MetricsSettingsPatch, TrendSeries,
+};
 use tracker_storage::repository::{Exclusion, Repository, Scope, Settings, SettingsPatch};
 use tracker_storage::{crypto, StorageError};
 
+use crate::metrics_service;
 use crate::state::AppState;
 use crate::tracking_service;
 
@@ -282,10 +287,127 @@ pub fn set_master_password(
 }
 
 #[tauri::command]
-pub fn unlock(state: State<AppState>, password: String) -> CmdResult<bool> {
+pub fn unlock(app: AppHandle, state: State<AppState>, password: String) -> CmdResult<bool> {
     match tracking_service::open_and_start(&state, Some(&password)) {
-        Ok(()) => Ok(true),
+        Ok(()) => {
+            // 資料庫解鎖後啟動背景指標取樣（002-system-metrics）。
+            metrics_service::start(&app);
+            Ok(true)
+        }
         Err(StorageError::BadPassword) => Ok(false),
         Err(e) => Err(e.into()),
     }
+}
+
+// ---- 系統指標（002-system-metrics，對應 contracts/tauri-commands.md）----
+
+/// 指標查詢的輔助：以 [`MetricsRepo`] 存取已解鎖的資料庫。
+fn with_metrics<T>(
+    state: &AppState,
+    f: impl FnOnce(&MetricsRepo) -> tracker_storage::Result<T>,
+) -> CmdResult<T> {
+    let guard = state.db.lock().map_err(|_| CommandError::internal("資料庫鎖定失敗"))?;
+    let dbref = guard
+        .as_ref()
+        .ok_or_else(|| CommandError::new("LOCKED", "資料庫尚未解鎖，請先輸入主密碼"))?;
+    let repo = MetricsRepo::new(dbref);
+    f(&repo).map_err(CommandError::from)
+}
+
+/// 歷史區間查詢輸入（contracts §2）。
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RangeQuery {
+    pub from_utc: i64,
+    pub to_utc: i64,
+    /// UI 便利性參數（篩選），後端目前全支援。
+    #[serde(default)]
+    pub metrics: Option<Vec<String>>,
+}
+
+/// 清除結果（contracts §5）。
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClearMetricsResult {
+    pub deleted_samples: u64,
+}
+
+/// 即時檢視：最近一次整機快照（US2 / FR-009）。
+#[tauri::command]
+pub fn get_current_metrics(state: State<AppState>) -> CmdResult<Option<MetricSnapshot>> {
+    // 優先回傳服務快取之最近快照；無快取時退回讀取資料庫最新樣本。
+    if let Ok(last) = state.metrics.last.lock() {
+        if last.is_some() {
+            return Ok(last.clone());
+        }
+    }
+    with_metrics(&state, |r| r.get_latest_snapshot())
+}
+
+/// 歷史區間查詢／趨勢（US3 / FR-010、FR-014）。
+#[tauri::command]
+pub fn get_metrics_range(state: State<AppState>, query: RangeQuery) -> CmdResult<TrendSeries> {
+    if query.to_utc <= query.from_utc {
+        return Err(CommandError::new("INVALID_RANGE", "結束時間須大於開始時間"));
+    }
+    with_metrics(&state, |r| r.get_metrics_range(query.from_utc, query.to_utc))
+}
+
+/// 裝置清單（含已移除，FR-008 / SC-004）。
+#[tauri::command]
+pub fn list_metric_devices(state: State<AppState>) -> CmdResult<DeviceLists> {
+    with_metrics(&state, |r| r.list_devices())
+}
+
+/// 取得指標設定（contracts §4）。
+#[tauri::command]
+pub fn get_metrics_settings(state: State<AppState>) -> CmdResult<MetricsSettings> {
+    with_metrics(&state, |r| r.get_metrics_settings())
+}
+
+/// 設定指標設定：驗證界限、持久化、套用到執行時控制（FR-011/012/015）。
+#[tauri::command]
+pub fn set_metrics_settings(
+    state: State<AppState>,
+    patch: MetricsSettingsPatch,
+) -> CmdResult<MetricsSettings> {
+    // 界限驗證（contracts §4）。
+    if let Some(v) = patch.sample_interval_sec {
+        if !(1..=3600).contains(&v) {
+            return Err(CommandError::new("INVALID_SETTING", "取樣秒數須介於 1 至 3600 秒"));
+        }
+    }
+    if let Some(v) = patch.retention_days {
+        if !(1..=3650).contains(&v) {
+            return Err(CommandError::new("INVALID_SETTING", "保留天數須介於 1 至 3650 天"));
+        }
+    }
+
+    let retention_changed = patch.retention_days.is_some();
+    let settings = with_metrics(&state, |r| r.set_metrics_settings(&patch))?;
+
+    // 套用到執行時控制旗標。
+    state.metrics.interval_sec.store(settings.sample_interval_sec, Ordering::SeqCst);
+    state.metrics.retention_days.store(settings.retention_days, Ordering::SeqCst);
+    state.metrics.enabled.store(settings.enabled, Ordering::SeqCst);
+
+    // 變更保留天數後可立即觸發一次清理。
+    if retention_changed {
+        metrics_service::purge_now(&state);
+    }
+    Ok(settings)
+}
+
+/// 清除指標紀錄（省略 `beforeUtc` 即全刪，contracts §5）。
+#[tauri::command]
+pub fn clear_metrics_data(
+    state: State<AppState>,
+    before_utc: Option<i64>,
+) -> CmdResult<ClearMetricsResult> {
+    let deleted = with_metrics(&state, |r| r.clear_metrics(before_utc))?;
+    // 一併清空即時快取，避免呈現已刪除資料。
+    if let Ok(mut last) = state.metrics.last.lock() {
+        *last = None;
+    }
+    Ok(ClearMetricsResult { deleted_samples: deleted })
 }

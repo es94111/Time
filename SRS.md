@@ -111,4 +111,5 @@ ui/                      # 前端（TypeScript，zh-TW 介面）
 
 | 版本 | 日期 | 說明 |
 |------|------|------|
+| 1.1 | 2026-07-01 | 新增系統資源監控模組（002-system-metrics）：PDH 效能計數器（CPU / PhysicalDisk / Network Interface / GPU Engine）＋ DXGI VRAM；即時監控頁面（metrics://sample 事件推送）；歷史趨勢查詢含四段降取樣（raw / 60s / 3600s / 86400s）；7 張新增資料表（metric_sample, disk_device, disk_sample, network_interface, net_sample, gpu_device, gpu_sample）；6 個 Tauri IPC 指令；metrics_service 背景執行緒 |
 | 1.0 | 2026-07-01 | 初始發佈：活動追蹤器核心功能（應用程式使用時長 + 網站瀏覽時長 + 歷史查詢 + 本機加密 + CSV/JSON 匯出） |

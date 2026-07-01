@@ -19,6 +19,40 @@ export function formatClock(ms: number): string {
   return `${hh}:${mm}`;
 }
 
+/** 將位元組格式化為易讀字串（B／KB／MB／GB／TB，1024 進位）。 */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "—";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let v = bytes;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i += 1;
+  }
+  const digits = i === 0 ? 0 : v < 10 ? 2 : v < 100 ? 1 : 0;
+  return `${v.toFixed(digits)} ${units[i]}`;
+}
+
+/** 將速率（bytes/sec）格式化為易讀字串（如 12.3 MB/s）。 */
+export function formatRate(bytesPerSec: number): string {
+  return `${formatBytes(bytesPerSec)}/s`;
+}
+
+/** 將 0–100 使用率格式化為百分比字串。 */
+export function formatPct(pct: number): string {
+  return `${pct.toFixed(pct < 10 ? 1 : 0)}%`;
+}
+
+/** 以 epoch ms 產生 MM-DD HH:MM 本機字串（歷史趨勢用）。 */
+export function formatDateTime(ms: number): string {
+  const d = new Date(ms);
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${mo}-${day} ${hh}:${mm}`;
+}
+
 /** 今日本機日期（YYYY-MM-DD）。 */
 export function todayLocalDate(): string {
   const d = new Date();

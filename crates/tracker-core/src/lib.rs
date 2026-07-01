@@ -7,6 +7,7 @@
 pub mod aggregation;
 pub mod browsers;
 pub mod hostname;
+pub mod metrics;
 pub mod model;
 pub mod ports;
 pub mod rules;
