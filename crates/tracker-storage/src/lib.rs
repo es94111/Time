@@ -9,6 +9,7 @@ pub mod crypto;
 pub mod db;
 pub mod error;
 pub mod export;
+pub mod metrics_repo;
 pub mod repository;
 
 pub use db::Database;
