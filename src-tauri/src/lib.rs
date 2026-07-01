@@ -3,6 +3,7 @@
 //! 職責：單一實例、系統匣、關閉即最小化至系統匣、以（可選）主密碼延遲開啟加密 DB、
 //! 啟動背景追蹤服務、註冊 IPC 命令。
 
+mod auth_commands;
 mod commands;
 mod metrics_service;
 mod state;
@@ -17,7 +18,7 @@ use tracker_core::rules::{Exclusions, DEFAULT_IDLE_THRESHOLD_MS};
 use tracker_platform::secret::DpapiSecretStore;
 use tracker_storage::{crypto, Repository};
 
-use state::{AppState, MetricsControl, Paths, SharedControl};
+use state::{AppState, MetricsControl, Paths, SharedControl, SyncControl};
 
 /// 啟動應用程式。
 pub fn run() {
@@ -31,10 +32,14 @@ pub fn run() {
     let control = Arc::new(SharedControl::new(false, DEFAULT_IDLE_THRESHOLD_MS, Exclusions::default()));
     let db = Arc::new(Mutex::new(None));
 
+    let server_base_url =
+        std::env::var("SYNC_SERVER_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+
     let app_state = AppState {
         db,
         control,
         metrics: Arc::new(MetricsControl::new()),
+        sync: Arc::new(SyncControl::new(server_base_url)),
         tz,
         paths,
         secret: DpapiSecretStore::new(),
@@ -72,6 +77,9 @@ pub fn run() {
             commands::get_metrics_settings,
             commands::set_metrics_settings,
             commands::clear_metrics_data,
+            auth_commands::login,
+            auth_commands::logout,
+            auth_commands::get_connection_status,
         ])
         .on_window_event(|window, event| {
             // 關閉主視窗即最小化至系統匣（背景常駐，FR-002）。
@@ -90,6 +98,7 @@ pub fn run() {
                 match tracking_service::open_and_start(&st, None) {
                     Ok(()) => {
                         sync_autostart(&st);
+                        resume_sync_agent_if_logged_in(&st);
                         drop(st);
                         // 資料庫就緒後啟動背景指標取樣（002-system-metrics）。
                         metrics_service::start(app.handle());
@@ -116,6 +125,36 @@ fn sync_autostart(state: &AppState) {
             .unwrap_or(false)
     };
     tracker_platform::autostart::set_autostart(enabled, &state.exe_path);
+}
+
+/// 重啟軟體後若本機已有有效登入憑證快取，直接恢復背景同步代理（工作階段可維持，FR-002）。
+fn resume_sync_agent_if_logged_in(state: &AppState) {
+    let fingerprint = match tracker_platform::device_id::default_source().machine_guid() {
+        Some(f) => f,
+        None => return,
+    };
+    let logged_in = {
+        let guard = state.db.lock().unwrap();
+        guard
+            .as_ref()
+            .map(|db| tracker_storage::auth_cache_repo::AuthCacheRepo::new(db).load().unwrap_or(None).is_some())
+            .unwrap_or(false)
+    };
+    if !logged_in {
+        return;
+    }
+    let mut agent_guard = state.sync.agent.lock().unwrap();
+    if agent_guard.is_some() {
+        return;
+    }
+    let handle = tracker_sync::agent::spawn(
+        state.sync.server_base_url.clone(),
+        state.db.clone(),
+        Arc::new(tracker_platform::secret::DpapiSecretStore::new()),
+        fingerprint,
+        state.sync.status.clone(),
+    );
+    *agent_guard = Some(handle);
 }
 
 fn setup_tray(app: &mut tauri::App) -> tauri::Result<()> {

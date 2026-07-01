@@ -7,6 +7,8 @@
 pub mod autostart;
 #[cfg(windows)]
 pub mod browser_url;
+/// 裝置指紋（跨平台可測試：trait + 假來源恆可用，真實登錄檔實作於 Windows 限定，T019/T022）。
+pub mod device_id;
 #[cfg(windows)]
 pub mod foreground;
 #[cfg(windows)]

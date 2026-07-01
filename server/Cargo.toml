@@ -1,0 +1,31 @@
+[workspace]
+
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+license = "MIT"
+
+[dependencies]
+axum = "0.8"
+axum-extra = { version = "0.12", features = ["cookie"] }
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "uuid", "chrono", "migrate"] }
+argon2 = "0.5"
+aws-config = "1"
+aws-sdk-s3 = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+jiff = { version = "0.2", features = ["serde"] }
+chrono = "0.4"
+uuid = { version = "1", features = ["v4", "serde"] }
+thiserror = "2"
+flate2 = "1"
+base64 = "0.22"
+
+[dev-dependencies]
+reqwest = { version = "0.13", features = ["json", "rustls", "cookies"], default-features = false }
