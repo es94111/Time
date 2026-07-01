@@ -5,12 +5,15 @@
 //! - `repository`：工作階段寫入與摘要查詢。
 //! - `export`：CSV／JSON 匯出（含 UTF-8 BOM）。
 
+pub mod auth_cache_repo;
 pub mod crypto;
 pub mod db;
+pub mod device_identity_repo;
 pub mod error;
 pub mod export;
 pub mod metrics_repo;
 pub mod repository;
+pub mod sync_queue_repo;
 
 pub use db::Database;
 pub use error::{Result, StorageError};

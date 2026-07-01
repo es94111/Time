@@ -111,8 +111,6 @@ ui/                      # 前端（TypeScript，zh-TW 介面）
 
 | 版本 | 日期 | 說明 |
 |------|------|------|
-
+| 2.0 | 2026-07-01 | 新增遠端資料同步與網頁儀表板模組（003-remote-sync-web-login）：Windows 軟體與網頁共用帳號登入（Argon2id 雜湊、伺服器端可撤銷 Session）；裝置指紋識別（登錄檔 MachineGuid）；待同步佇列（沿用 SQLCipher，固定批次補傳、磁碟滿捨棄最舊）；`server/` 新增獨立 Cargo workspace（Axum + PostgreSQL + S3 相容物件儲存），Docker 容器化部署；多裝置檢視、唯讀分享、帳號鎖定（連續 10 次失敗鎖定 15 分鐘）等安全機制 |
 | 1.1 | 2026-07-01 | 新增系統資源監控模組（002-system-metrics）：PDH 效能計數器（CPU / PhysicalDisk / Network Interface / GPU Engine）＋ DXGI VRAM；即時監控頁面（metrics://sample 事件推送）；歷史趨勢查詢含四段降取樣（raw / 60s / 3600s / 86400s）；7 張新增資料表（metric_sample, disk_device, disk_sample, network_interface, net_sample, gpu_device, gpu_sample）；6 個 Tauri IPC 指令；metrics_service 背景執行緒 |
-
-
 | 1.0 | 2026-07-01 | 初始發佈：活動追蹤器核心功能（應用程式使用時長 + 網站瀏覽時長 + 歷史查詢 + 本機加密 + CSV/JSON 匯出） |

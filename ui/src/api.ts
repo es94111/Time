@@ -167,6 +167,21 @@ export interface TrendSeries {
   points: TrendPoint[];
 }
 
+// ---- 遠端同步與登入（003-remote-sync-web-login，對應 contracts/tauri-commands.md）----
+
+export interface ConnectionStatus {
+  logged_in: boolean;
+  account_hint: string | null;
+  last_successful_sync_at: string | null;
+  pending_queue_count: number;
+  last_sync_error: string | null;
+}
+export interface LoginError {
+  code: "InvalidCredentials" | "AccountLocked" | "NetworkError";
+  retry_after_seconds?: number;
+  message?: string;
+}
+
 export const api = {
   getTrackingStatus: () => invoke<TrackingStatus>("get_tracking_status"),
   getLockState: () => invoke<LockState>("get_lock_state"),
@@ -210,6 +225,12 @@ export const api = {
     invoke<{ deletedSamples: number }>("clear_metrics_data", { before_utc: beforeUtc ?? null }),
   onMetricsSample: (cb: (snap: MetricSnapshot) => void) =>
     listen<MetricSnapshot>("metrics://sample", cb),
+
+  // ---- 遠端同步與登入 ----
+  login: (identifier: string, password: string) =>
+    invoke<ConnectionStatus>("login", { identifier, password }),
+  logout: () => invoke<void>("logout"),
+  getConnectionStatus: () => invoke<ConnectionStatus>("get_connection_status"),
 };
 
 export function errText(e: unknown): string {

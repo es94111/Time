@@ -4,7 +4,9 @@ import "./styles.css";
 import { api, errText } from "./api";
 import { toast } from "./components/list";
 import { t } from "./i18n/zh-TW";
+import { fetchConnectionStatus, renderConnectionStatus } from "./views/connection-status";
 import { renderHistory } from "./views/history";
+import { renderLogin } from "./views/login";
 import { renderMetricsHistory } from "./views/metrics-history";
 import { disposeMetricsLive, renderMetricsLive } from "./views/metrics-live";
 import { renderRange } from "./views/range";
@@ -96,7 +98,10 @@ function renderShell(): void {
   const statusline = document.createElement("div");
   statusline.className = "statusline";
   statusline.id = "statusline";
-  header.append(h1, statusline);
+  const connStatusline = document.createElement("div");
+  connStatusline.className = "statusline";
+  connStatusline.id = "connStatusline";
+  header.append(h1, statusline, connStatusline);
 
   const nav = document.createElement("nav");
   nav.className = "tabs";
@@ -139,7 +144,57 @@ function renderShell(): void {
 
   if (statusTimer) clearInterval(statusTimer);
   void updateStatusline();
-  statusTimer = window.setInterval(() => void updateStatusline(), 3000);
+  void updateConnStatusline();
+  statusTimer = window.setInterval(() => {
+    void updateStatusline();
+    void updateConnStatusline();
+  }, 3000);
+}
+
+async function updateConnStatusline(): Promise<void> {
+  const el = document.getElementById("connStatusline");
+  if (!el) return;
+  try {
+    const status = await fetchConnectionStatus();
+    if (!status.logged_in) {
+      el.innerHTML = "";
+      const dot = document.createElement("span");
+      dot.className = "dot off";
+      const label = document.createElement("span");
+      label.textContent = t.login.notLoggedIn;
+      const loginBtn = document.createElement("button");
+      loginBtn.className = "btn secondary";
+      loginBtn.textContent = t.login.login;
+      loginBtn.onclick = () => showLoginOverlay();
+      el.append(dot, label, loginBtn);
+      return;
+    }
+    renderConnectionStatus(el, status, () => void updateConnStatusline());
+  } catch {
+    // 忽略暫時性錯誤（後端尚未就緒或裝置指紋不可用）。
+  }
+}
+
+function showLoginOverlay(): void {
+  const overlay = document.createElement("div");
+  overlay.className = "center";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,0.4)";
+  overlay.style.zIndex = "1000";
+  const panel = document.createElement("div");
+  panel.className = "unlock-box";
+  overlay.append(panel);
+  document.body.append(overlay);
+
+  renderLogin(panel, () => {
+    overlay.remove();
+    void updateConnStatusline();
+  });
+
+  overlay.onclick = (e) => {
+    if (e.target === overlay) overlay.remove();
+  };
 }
 
 async function updateStatusline(): Promise<void> {

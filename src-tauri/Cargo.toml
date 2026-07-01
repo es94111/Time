@@ -19,8 +19,10 @@ tauri-build.workspace = true
 tracker-core.workspace = true
 tracker-platform.workspace = true
 tracker-storage.workspace = true
+tracker-sync.workspace = true
 tauri.workspace = true
 tauri-plugin-single-instance.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 jiff.workspace = true
+tokio = { version = "1", features = ["rt"] }

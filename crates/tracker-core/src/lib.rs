@@ -12,6 +12,7 @@ pub mod model;
 pub mod ports;
 pub mod rules;
 pub mod session;
+pub mod sync;
 pub mod time;
 
 pub use model::{

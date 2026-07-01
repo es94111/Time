@@ -7,6 +7,7 @@ members = [
     "crates/tracker-core",
     "crates/tracker-platform",
     "crates/tracker-storage",
+    "crates/tracker-sync",
     "src-tauri",
 ]
 
@@ -34,6 +35,8 @@ zeroize = { version = "1", features = ["derive"] }
 getrandom = "0.2"
 # 加密 SQLite（SQLCipher，bundled 含 OpenSSL，免裝系統 OpenSSL）
 rusqlite = { version = "0.32", features = ["bundled-sqlcipher-vendored-openssl"] }
+# 用戶端與遠端伺服器 HTTPS 通訊（research.md R7；非 Windows 原廠元件，見 Complexity Tracking）
+reqwest = { version = "0.13", features = ["json", "rustls"], default-features = false }
 # Microsoft 官方 Windows API 綁定
 windows = "0.58"
 windows-core = "0.58"
@@ -47,6 +50,7 @@ tauri-plugin-single-instance = "2"
 tracker-core = { path = "crates/tracker-core" }
 tracker-platform = { path = "crates/tracker-platform" }
 tracker-storage = { path = "crates/tracker-storage" }
+tracker-sync = { path = "crates/tracker-sync" }
 
 [profile.release]
 opt-level = "s"   # 體積優先（低資源佔用，原則 IV）

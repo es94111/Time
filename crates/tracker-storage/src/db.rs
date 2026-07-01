@@ -104,6 +104,31 @@ CREATE TABLE IF NOT EXISTS gpu_sample (
   PRIMARY KEY (sample_id, gpu_id)
 );
 
+-- 待同步佇列（003-remote-sync-web-login，data-model.md 用戶端本機小節）。
+CREATE TABLE IF NOT EXISTS sync_queue (
+  id               INTEGER PRIMARY KEY,
+  payload          BLOB NOT NULL,
+  created_at_local TEXT NOT NULL,
+  dedup_key        TEXT NOT NULL UNIQUE,
+  upload_state     TEXT NOT NULL DEFAULT 'queued'
+    CHECK (upload_state IN ('queued','uploading','uploaded','discarded_disk_full'))
+);
+CREATE INDEX IF NOT EXISTS idx_sync_queue_state_created ON sync_queue(upload_state, created_at_local);
+
+-- 裝置身分快取（單列，登入時寫入伺服器回傳的 device.id）。
+CREATE TABLE IF NOT EXISTS device_identity (
+  hardware_fingerprint TEXT PRIMARY KEY,
+  server_device_id     TEXT
+);
+
+-- 登入憑證快取（單列；refresh_token 以 DPAPI 保護後存放）。
+CREATE TABLE IF NOT EXISTS auth_cache (
+  id                          INTEGER PRIMARY KEY CHECK (id = 1),
+  refresh_token               BLOB,
+  account_hint                TEXT,
+  desktop_session_expires_at  TEXT
+);
+
 -- 預設設定（僅在不存在時插入）。
 INSERT OR IGNORE INTO setting(key, value) VALUES
   ('idle_threshold_sec', '300'),

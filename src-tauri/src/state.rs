@@ -104,12 +104,30 @@ impl Default for MetricsControl {
     }
 }
 
+/// 遠端同步相關狀態（003-remote-sync-web-login）。
+pub struct SyncControl {
+    /// 遠端伺服器基底 URL（如 `https://sync.example.com`）。
+    pub server_base_url: String,
+    /// 背景同步代理控制代碼（登入後啟動、登出即停止，FR-002/FR-008）。
+    pub agent: Mutex<Option<tracker_sync::agent::AgentHandle>>,
+    /// 最近一次同步結果，供 `get_connection_status` 查詢。
+    pub status: Arc<Mutex<tracker_sync::agent::SyncStatus>>,
+}
+
+impl SyncControl {
+    pub fn new(server_base_url: String) -> Self {
+        Self { server_base_url, agent: Mutex::new(None), status: Arc::new(Mutex::new(Default::default())) }
+    }
+}
+
 /// Tauri 管理的應用狀態。
 pub struct AppState {
     pub db: SharedDb,
     pub control: Arc<SharedControl>,
     /// 指標服務控制（002-system-metrics）。
     pub metrics: Arc<MetricsControl>,
+    /// 遠端同步控制（003-remote-sync-web-login）。
+    pub sync: Arc<SyncControl>,
     pub tz: TimeZone,
     pub paths: Paths,
     pub secret: DpapiSecretStore,
