@@ -1,0 +1,36 @@
+[package]
+name = "tracker-platform"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Windows 原廠整合（windows crate）：前景、閒置、電源/工作階段、UIA、程序名稱、DPAPI、自啟"
+
+[dependencies]
+tracker-core.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-core.workspace = true
+
+[target.'cfg(windows)'.dependencies.windows]
+workspace = true
+features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Accessibility",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_System_Threading",
+    "Win32_System_ProcessStatus",
+    "Win32_System_SystemInformation",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Com",
+    "Win32_System_Variant",
+    "Win32_System_RemoteDesktop",
+    "Win32_System_Registry",
+    "Win32_Storage_FileSystem",
+    "Win32_Security",
+    "Win32_Security_Cryptography",
+    "Win32_System_Power",
+]

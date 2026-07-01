@@ -31,7 +31,18 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+> 本計畫文件**必須**以正體中文（zh-TW）撰寫（憲章原則 I）。
+
+依據憲章（`.specify/memory/constitution.md` v1.1.0）的關卡：
+
+- **原則 I — 正體中文優先**：本計畫與其產出之 spec/tasks 是否以正體中文撰寫？
+- **原則 II — 隱私優先與本機資料**：是否涉及活動資料蒐集／儲存／傳送？若有，是否預設僅存本機、外傳預設關閉且向使用者揭露？
+- **原則 III — 追蹤準確且誠實**：時長／統計的量測定義（前景／背景、idle／active）是否明確、不以推估假冒實測？
+- **原則 IV — 簡潔與低資源佔用**：新增的相依套件、常駐程序或背景輪詢是否說明其資源成本與必要性（YAGNI）？
+- **原則 V — 規格驅動開發**：本計畫是否對應已核可的規格，且未超出其範圍？
+- **原則 VI — Rust 實作語言**：Windows 11 桌面應用程式與追蹤核心是否以 Rust 實作？任何非 Rust 執行期元件是否已說明必要性與被否決的 Rust 替代方案？
+
+任何違反項目**必須**記錄於下方「Complexity Tracking」並附正當理由，否則不得進入實作。
 
 ## Project Structure
 

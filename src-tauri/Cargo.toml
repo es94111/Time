@@ -1,0 +1,26 @@
+[package]
+name = "activity-tracker"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Windows 11 活動追蹤器（Tauri 2 應用：系統匣、背景追蹤、IPC 命令）"
+default-run = "activity-tracker"
+
+[lib]
+name = "activity_tracker_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build.workspace = true
+
+[dependencies]
+tracker-core.workspace = true
+tracker-platform.workspace = true
+tracker-storage.workspace = true
+tauri.workspace = true
+tauri-plugin-single-instance.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+jiff.workspace = true

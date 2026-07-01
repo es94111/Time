@@ -1,1 +1,28 @@
 doc/*
+
+# Rust / Cargo
+/target/
+**/target/
+*.rs.bk
+*.pdb
+
+# 前端 / Node
+node_modules/
+ui/dist/
+dist/
+
+# 機密與資料庫（嚴禁提交，憲章「機密管理」）
+*.db
+*.db-wal
+*.db-shm
+*.key
+.env
+.env.*
+*.pem
+
+# 工具
+.idea/
+*.log
+
+# 機器專屬本機建置設定（target 目錄覆寫）
+.cargo/config.toml

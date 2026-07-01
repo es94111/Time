@@ -1,0 +1,21 @@
+[package]
+name = "tracker-storage"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "加密 SQLite（SQLCipher，AES-256）+ DPAPI 金鑰保護 + CSV/JSON 匯出"
+
+[dependencies]
+tracker-core.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+jiff.workspace = true
+csv.workspace = true
+argon2.workspace = true
+aes-gcm.workspace = true
+zeroize.workspace = true
+getrandom.workspace = true
+thiserror.workspace = true

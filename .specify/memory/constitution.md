@@ -1,50 +1,119 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- 版本變更：1.0.0 → 1.1.0（修訂：新增實作語言原則）
+- 修改的原則：
+    新增 VI. Rust 實作語言（使用者要求：Windows 11 必須使用 Rust）
+- 既有原則（未變更）：
+    I. 正體中文優先
+    II. 隱私優先與本機資料
+    III. 追蹤準確且誠實
+    IV. 簡潔與低資源佔用
+    V. 規格驅動開發
+- 章節異動：「技術與安全約束」新增「實作語言」條目
+- 移除章節：無
+- 需同步更新的範本：
+    ✅ .specify/templates/plan-template.md（憲章檢查關卡新增原則 VI）
+    ✅ .specify/templates/spec-template.md（zh-TW 語言要求註記，無需再改）
+    ✅ .specify/templates/tasks-template.md（zh-TW 語言要求註記，無需再改）
+    ✅ .specify/templates/checklist-template.md（zh-TW 語言要求註記，無需再改）
+- 延後處理的待辦：無
+- 歷史：v1.0.0（2026-06-30）初次批准，確立原則 I–V 與各章節
+-->
 
-## Core Principles
+# Windows 11 活動追蹤 憲章
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+## 核心原則
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### I. 正體中文優先
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+所有規格（spec）、計畫（plan）、任務（tasks）、檢查清單，以及任何面向使用者的文件與
+介面文字，**必須**以正體中文（zh-TW）撰寫。原始碼識別字、API 名稱、第三方專有名詞與
+無對應譯名的技術詞彙得保留原文；程式碼註解優先使用正體中文。
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**理由**：本專案的目標使用者與維護者以正體中文為主要語言；統一語言可降低溝通歧義，
+並確保使用者看到一致、可理解的產品體驗。
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. 隱私優先與本機資料
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+活動資料（軟體使用時長、瀏覽網站紀錄）屬於高度敏感的個人資料。預設情況下，所有追蹤
+資料**必須**僅儲存於使用者本機，**不得**在未取得使用者明確同意前上傳至任何外部伺服器或
+第三方服務。任何資料外傳功能**必須**為可關閉、預設關閉，並向使用者清楚揭露傳送內容。
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+**理由**：追蹤工具天生會接觸使用者最私密的數位行為；信任是產品存續的前提，違反隱私
+即摧毀產品價值。
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### III. 追蹤準確且誠實
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+呈現給使用者的時長與統計數字**必須**反映真實量測，不得以推估值假冒實測值。前景／背景、
+閒置（idle）與作用中（active）狀態**必須**有明確且一致的定義；當資料缺漏或量測不確定時，
+**必須**據實標示，而非以零或臆測值填補。
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+**理由**：使用者依據這些數字做自我管理決策；不準確或誤導性的統計會直接損害產品的核心
+用途。
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### IV. 簡潔與低資源佔用
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+作為長時間於背景執行的應用程式，本軟體**必須**維持低 CPU、低記憶體與低耗電。功能採
+YAGNI 原則：除非有明確需求，否則不新增功能、相依套件或抽象層。新增的背景輪詢、常駐
+程序或相依套件**必須**說明其資源成本與必要性。
+
+**理由**：背景追蹤工具若拖慢系統或耗盡電量，使用者會直接解除安裝；輕量是不可妥協的
+產品特性。
+
+### V. 規格驅動開發
+
+功能開發**必須**遵循 Spec-Driven Development 流程：先有規格（`/speckit.specify`），再有
+計畫（`/speckit.plan`），再拆解任務（`/speckit.tasks`），最後實作（`/speckit.implement`）。
+實作**不得**超出已核可規格的範圍；當實作過程發現規格落差時，**必須**回頭更新規格而非
+私下擴張範圍。
+
+**理由**：先對齊「做什麼、為何做」再寫程式，可避免返工、範圍蔓延與不可追溯的決策。
+
+### VI. Rust 實作語言
+
+Windows 11 平台的桌面應用程式與其活動追蹤核心**必須**以 Rust 程式語言實作。系統層級的
+追蹤邏輯（前景視窗偵測、瀏覽器活動量測、本機資料儲存）**必須**以 Rust 撰寫；前端 UI 得
+採用搭配 Rust 後端的框架（如 Tauri）。引入任何非 Rust 的執行期元件**必須**在計畫中說明其
+必要性與已被否決的 Rust 替代方案。
+
+**理由**：Rust 在不依賴垃圾回收的前提下提供記憶體安全與低資源佔用，契合背景常駐追蹤
+工具對穩定性、效能與安全性的要求（呼應原則 IV）。
+
+## 技術與安全約束
+
+- **目標平台**：主要支援 Windows 11；其他平台屬非目標，除非規格另行明定。
+- **實作語言**：Windows 11 之桌面應用程式與追蹤核心**必須**以 Rust 實作（原則 VI）。
+- **資料儲存**：使用者活動資料**必須**儲存於本機（如本機資料庫或檔案），並落在使用者
+  作業系統的標準應用程式資料目錄內。
+- **權限最小化**：僅請求達成追蹤功能所必要的系統權限；新增的系統 API 或權限請求
+  **必須**在計畫中說明用途。
+- **機密管理**：**不得**將任何金鑰、憑證或 `.env` 檔提交至版本庫。
+- **資料可攜與刪除**：使用者**必須**能匯出與徹底刪除自身的活動資料。
+
+## 開發工作流程與品質關卡
+
+- **語言關卡**：任何規格、計畫、任務與使用者文件在審核時，**必須**確認以正體中文
+  （zh-TW）撰寫（原則 I）。
+- **憲章檢查**：每份計畫（plan.md）**必須**通過「憲章檢查（Constitution Check）」關卡；
+  任何違反原則之處**必須**記錄於計畫的「Complexity Tracking」並附正當理由，否則不得
+  進入實作。
+- **隱私審查**：凡涉及資料蒐集、儲存或傳送的變更，**必須**對照原則 II 與技術約束逐項
+  確認後方可合併。
+- **版本控制**：提交訊息得使用正體中文；**不得**在使用者提交中加入未授權的協作署名
+  （Co-Authored-By）。
+
+## 治理
+
+本憲章為本專案最高層級的開發準則，其效力**優先於**其他慣例與個人偏好；當其他文件與本
+憲章衝突時，以本憲章為準。
+
+- **修訂程序**：任何修訂**必須**以書面提出、說明動機與影響範圍，並更新本檔的版本與
+  日期；涉及原則的修訂**必須**同步檢查並更新相依範本（plan、spec、tasks、checklist）。
+- **版本政策**：版本號採語意化版本（MAJOR.MINOR.PATCH）。
+    - MAJOR：移除或重新定義原則等不向後相容的治理變更。
+    - MINOR：新增原則或章節，或實質擴充既有指引。
+    - PATCH：用字、釐清與不影響語意的修正。
+- **合規審查**：所有 PR 與審核**必須**驗證是否符合本憲章；複雜度與例外**必須**有正當
+  理由。日常開發的細節指引以各功能的計畫與規格文件為準。
+
+**Version**: 1.1.0 | **Ratified**: 2026-06-30 | **Last Amended**: 2026-06-30

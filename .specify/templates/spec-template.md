@@ -5,6 +5,8 @@
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
+> 本規格文件**必須**以正體中文（zh-TW）撰寫（憲章原則 I）。
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--

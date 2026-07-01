@@ -1,0 +1,3 @@
+# 統一 Rust 格式（憲章原則 IV：簡潔、一致）
+edition = "2021"
+max_width = 100

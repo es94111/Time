@@ -1,0 +1,13 @@
+[package]
+name = "tracker-core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "純領域邏輯：工作階段狀態機、彙總、主機名解析（無 OS 相依，完全可單元測試）"
+
+[dependencies]
+serde.workspace = true
+jiff.workspace = true
+url.workspace = true
