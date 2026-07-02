@@ -1,0 +1,109 @@
+# 安全掃描與漏洞檢查
+# 涵蓋四個面向：
+#   1. cargo-audit：比對 RUSTSEC 漏洞資料庫（用戶端 + 伺服器兩個 Cargo.lock）
+#   2. gitleaks：掃描原始碼與歷史紀錄中的機密（金鑰、密碼、token）
+#   3. CodeQL：前端 TypeScript 靜態程式分析（SAST）
+#   4. Trivy：檔案系統相依與設定檔漏洞掃描（含 server/Dockerfile）
+# 註：CodeQL 與 SARIF 上傳需公開儲存庫，或私有庫啟用 GitHub Advanced Security。
+name: 安全掃描與漏洞檢查
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * 1' # 每週一 03:00 UTC 定期重掃（新披露的漏洞）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write # 上傳 SARIF 至 Security 分頁
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 1. Rust 相依漏洞稽核（RUSTSEC）
+  cargo-audit:
+    name: Cargo 漏洞稽核（${{ matrix.name }}）
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 用戶端
+            lockfile: Cargo.lock
+          - name: 伺服器
+            lockfile: server/Cargo.lock
+    steps:
+      - name: 取出程式碼
+        uses: actions/checkout@v4
+
+      - name: 安裝 Rust 穩定版
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 安裝 cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: 執行漏洞稽核
+        run: cargo audit --file ${{ matrix.lockfile }} --deny warnings
+
+  # 2. 機密掃描
+  gitleaks:
+    name: 機密掃描（gitleaks）
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出程式碼（含完整歷史）
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 執行 gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 3. 前端靜態程式分析（SAST）
+  codeql:
+    name: CodeQL 靜態分析（前端）
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出程式碼
+        uses: actions/checkout@v4
+
+      - name: 初始化 CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: 執行分析
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:javascript-typescript'
+
+  # 4. 檔案系統相依與設定漏洞掃描
+  trivy:
+    name: Trivy 相依與設定掃描
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出程式碼
+        uses: actions/checkout@v4
+
+      - name: 執行 Trivy（檔案系統）
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: 上傳 Trivy 結果至 Security 分頁
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
