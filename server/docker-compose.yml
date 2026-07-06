@@ -21,8 +21,9 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
       # 啟用單金鑰 SSE-S3 自動加密（無外部 KMS 時之最小可用設定），
       # 對應 server/src/storage/s3.rs 寫入時要求的伺服器端加密（research.md R11）。
-      # 正式環境請改用外部 KMS 並更換此金鑰。
-      MINIO_KMS_SECRET_KEY: "tracker-sse-key:WDAs3F6FHq6qzTIY/3VlULRh7yZm4jG1BNPckqpzJ8w="
+      # 金鑰改由環境變數注入（複製 .env.example 為 .env 後填入），避免明文入庫；
+      # 正式環境請改用外部 KMS。
+      MINIO_KMS_SECRET_KEY: "${MINIO_KMS_SECRET_KEY:?請於 server/.env 設定 MINIO_KMS_SECRET_KEY（產生方式見 .env.example）}"
     ports:
       - "9000:9000"
       - "9001:9001"
