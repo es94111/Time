@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  actions: read # CodeQL 於私有儲存庫需讀取 workflow run 資訊（官方範本要求）
 
 concurrency:
   group: security-${{ github.ref }}
