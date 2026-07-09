@@ -1,0 +1,5 @@
+# gitleaks 已知項目指紋清單（格式：commit:檔案:規則:行號）
+# 下列金鑰為本機開發用 MinIO SSE-S3 金鑰，曾寫死於 docker-compose.yml，
+# 已改為環境變數注入（參見 server/.env.example）；該金鑰僅供本機開發、
+# 從未用於正式環境。若曾部署過，請務必更換金鑰。
+264e7344f4a0ddfdf082fd1784c4efafe40d1ac5:server/docker-compose.yml:generic-api-key:25

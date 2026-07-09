@@ -18,6 +18,7 @@ dist/
 *.key
 .env
 .env.*
+!.env.example
 *.pem
 
 # 工具

@@ -12,7 +12,7 @@ axum = "0.8"
 axum-extra = { version = "0.12", features = ["cookie"] }
 tokio = { version = "1", features = ["full"] }
 tower = "0.5"
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "uuid", "chrono", "migrate"] }
+sqlx = { version = "0.9", features = ["postgres", "runtime-tokio", "tls-rustls-ring-native-roots", "uuid", "chrono", "migrate"] }
 argon2 = "0.5"
 aws-config = "1"
 aws-sdk-s3 = "1"

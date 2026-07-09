@@ -4,7 +4,9 @@
 #   2. gitleaks：掃描原始碼與歷史紀錄中的機密（金鑰、密碼、token）
 #   3. CodeQL：前端 TypeScript 靜態程式分析（SAST）
 #   4. Trivy：檔案系統相依與設定檔漏洞掃描（含 server/Dockerfile）
-# 註：CodeQL 與 SARIF 上傳需公開儲存庫，或私有庫啟用 GitHub Advanced Security。
+# 註：本儲存庫為私有且未啟用 GitHub Advanced Security，無法上傳 SARIF 至
+#     Security 分頁；CodeQL 與 Trivy 結果改以 workflow artifact 保存。
+#     若日後公開儲存庫或啟用 GHAS，可改回 github/codeql-action/upload-sarif。
 name: 安全掃描與漏洞檢查
 
 on:
@@ -18,7 +20,7 @@ on:
 
 permissions:
   contents: read
-  security-events: write # 上傳 SARIF 至 Security 分頁
+  actions: read # CodeQL 於私有儲存庫需讀取 workflow run 資訊（官方範本要求）
 
 concurrency:
   group: security-${{ github.ref }}
@@ -35,11 +37,22 @@ jobs:
         include:
           - name: 用戶端
             lockfile: Cargo.lock
+            # 用戶端目前無需忽略項目
+            ignores: ''
           - name: 伺服器
             lockfile: server/Cargo.lock
+            # 忽略清單（皆為鎖檔中「未啟用功能」的選用相依，實際不會編譯進成品）：
+            #   RUSTSEC-2023-0071：rsa（經 sqlx-mysql 引入；本專案僅啟用 postgres 功能，且上游無修復版）
+            #   RUSTSEC-2026-0098/0099/0104：rustls-webpki 0.101（經 aws-smithy-http-client
+            #     的 legacy rustls 0.21「選用」功能引入；實際編譯使用的是 rustls 0.23 鏈）
+            ignores: >-
+              --ignore RUSTSEC-2023-0071
+              --ignore RUSTSEC-2026-0098
+              --ignore RUSTSEC-2026-0099
+              --ignore RUSTSEC-2026-0104
     steps:
       - name: 取出程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 安裝 Rust 穩定版
         uses: dtolnay/rust-toolchain@stable
@@ -47,8 +60,10 @@ jobs:
       - name: 安裝 cargo-audit
         run: cargo install cargo-audit --locked
 
+      # 不使用 --deny warnings：Tauri 的 Linux GTK3 綁定（atk/gdk/gtk 等）上游已標記
+      # 無人維護且暫無替代版本，僅列為警告供日誌追蹤；真正的漏洞（vulnerability）仍會使工作失敗。
       - name: 執行漏洞稽核
-        run: cargo audit --file ${{ matrix.lockfile }} --deny warnings
+        run: cargo audit --file ${{ matrix.lockfile }} ${{ matrix.ignores }}
 
   # 2. 機密掃描
   gitleaks:
@@ -56,10 +71,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 取出程式碼（含完整歷史）
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
+      # 歷史紀錄中已知且已處理的項目列於 .gitleaksignore（指紋格式：commit:檔案:規則:行號）
       - name: 執行 gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
@@ -71,17 +87,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 取出程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 初始化 CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
 
+      # 私有庫未啟用 GHAS：upload: never 跳過 Security 分頁上傳，改存 artifact
       - name: 執行分析
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: '/language:javascript-typescript'
+          upload: never
+          output: codeql-results
+
+      - name: 保存 CodeQL 結果（artifact）
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-results
+          path: codeql-results
 
   # 4. 檔案系統相依與設定漏洞掃描
   trivy:
@@ -89,10 +114,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 取出程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 執行 Trivy（檔案系統）
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scanners: vuln,secret,misconfig
@@ -101,9 +126,9 @@ jobs:
           format: sarif
           output: trivy-results.sarif
 
-      - name: 上傳 Trivy 結果至 Security 分頁
-        uses: github/codeql-action/upload-sarif@v3
+      - name: 保存 Trivy 結果（artifact）
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          sarif_file: trivy-results.sarif
-          category: trivy
+          name: trivy-results
+          path: trivy-results.sarif
