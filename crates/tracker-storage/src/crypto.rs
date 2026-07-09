@@ -40,7 +40,7 @@ struct KeyFile {
 
 fn random_bytes(len: usize) -> Result<Zeroizing<Vec<u8>>> {
     let mut buf = Zeroizing::new(vec![0u8; len]);
-    getrandom::getrandom(buf.as_mut_slice()).map_err(|e| StorageError::Crypto(e.to_string()))?;
+    getrandom::fill(buf.as_mut_slice()).map_err(|e| StorageError::Crypto(e.to_string()))?;
     Ok(buf)
 }
 
