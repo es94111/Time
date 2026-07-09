@@ -1,5 +1,5 @@
 # 建置 Windows 安裝檔（Tauri 2）
-# 產出：src-tauri/target/release/bundle/nsis/*.exe（NSIS 安裝檔）
+# 產出：target/release/bundle/nsis/*.exe（NSIS 安裝檔）
 # - push main / PR：僅建置並上傳 Artifact 供下載驗證
 # - 推送 v* 標籤：另外建立 GitHub Release（草稿），附上安裝檔
 name: 建置 Windows 安裝檔
@@ -70,5 +70,5 @@ jobs:
           name: windows-installer
           if-no-files-found: error
           path: |
-            src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/bundle/nsis/*.exe.sig
+            target/release/bundle/nsis/*.exe
+            target/release/bundle/nsis/*.exe.sig
