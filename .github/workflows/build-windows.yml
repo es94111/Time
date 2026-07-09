@@ -22,8 +22,11 @@ concurrency:
 
 jobs:
   build-windows:
-    name: 建置（windows-latest）
-    runs-on: windows-latest
+    name: 建置（windows-2022）
+    # Tauri NSIS bundling requires makensis. Pin Windows 2022 because
+    # windows-latest moved to Windows Server 2025 and that image no longer
+    # includes NSIS by default.
+    runs-on: windows-2022
     steps:
       - name: 取出程式碼
         uses: actions/checkout@v4
