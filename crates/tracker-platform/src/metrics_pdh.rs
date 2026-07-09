@@ -8,11 +8,8 @@ use windows::core::PCWSTR;
 use windows::Win32::System::Performance::{
     PdhAddEnglishCounterW, PdhCloseQuery, PdhCollectQueryData, PdhGetFormattedCounterArrayW,
     PdhGetFormattedCounterValue, PdhOpenQueryW, PDH_FMT_COUNTERVALUE, PDH_FMT_COUNTERVALUE_ITEM_W,
-    PDH_FMT_DOUBLE,
+    PDH_FMT_DOUBLE, PDH_HCOUNTER, PDH_HQUERY,
 };
-
-/// PDH query／counter 控點於 windows crate 中以 `isize` 表示。
-type PdhHandle = isize;
 
 const PDH_MORE_DATA: u32 = 0x800007D2;
 const ERROR_SUCCESS: u32 = 0;
@@ -35,9 +32,9 @@ fn wide(s: &str) -> Vec<u16> {
 }
 
 /// 加入英文計數器；失敗時回 `None`（該項視為不可用）。
-fn add_counter(query: PdhHandle, path: &str) -> Option<PdhHandle> {
+fn add_counter(query: PDH_HQUERY, path: &str) -> Option<PDH_HCOUNTER> {
     let w = wide(path);
-    let mut counter: PdhHandle = 0;
+    let mut counter = PDH_HCOUNTER::default();
     // SAFETY：query 有效、path 為以 NUL 結尾之寬字串、counter 為合法輸出位址。
     let status = unsafe { PdhAddEnglishCounterW(query, PCWSTR(w.as_ptr()), 0, &mut counter) };
     (status == ERROR_SUCCESS).then_some(counter)
@@ -45,19 +42,24 @@ fn add_counter(query: PdhHandle, path: &str) -> Option<PdhHandle> {
 
 /// PDH 取樣器：單一共用 query 與各計數器控點。
 pub struct PdhSampler {
-    query: PdhHandle,
-    cpu: Option<PdhHandle>,
-    disk_read: Option<PdhHandle>,
-    disk_write: Option<PdhHandle>,
-    net_rx: Option<PdhHandle>,
-    net_tx: Option<PdhHandle>,
-    gpu_util: Option<PdhHandle>,
+    query: PDH_HQUERY,
+    cpu: Option<PDH_HCOUNTER>,
+    disk_read: Option<PDH_HCOUNTER>,
+    disk_write: Option<PDH_HCOUNTER>,
+    net_rx: Option<PDH_HCOUNTER>,
+    net_tx: Option<PDH_HCOUNTER>,
+    gpu_util: Option<PDH_HCOUNTER>,
 }
+
+// PDH handles are owned by this sampler and only accessed through `&mut self`.
+// The sampler may be moved into the metrics background thread, but it is not
+// shared concurrently.
+unsafe impl Send for PdhSampler {}
 
 impl PdhSampler {
     /// 開啟 query、加入計數器並 prime 一次（速率計數器首次需基準）。
     pub fn new() -> Option<Self> {
-        let mut query: PdhHandle = 0;
+        let mut query = PDH_HQUERY::default();
         // SAFETY：以 NULL 資料來源開啟即時 query。
         let status = unsafe { PdhOpenQueryW(PCWSTR::null(), 0, &mut query) };
         if status != ERROR_SUCCESS {
@@ -106,7 +108,7 @@ impl Drop for PdhSampler {
 }
 
 /// 讀取單一實例計數器（如 CPU _Total）。
-fn read_single(counter: PdhHandle) -> Option<f64> {
+fn read_single(counter: PDH_HCOUNTER) -> Option<f64> {
     let mut value = PDH_FMT_COUNTERVALUE::default();
     // SAFETY：counter 有效、value 為合法輸出位址。
     let status =
@@ -119,7 +121,7 @@ fn read_single(counter: PdhHandle) -> Option<f64> {
 }
 
 /// 讀取萬用字元計數器陣列，回傳 (實例名, 值)；`_Total` 實例略過。
-fn read_array(counter: PdhHandle) -> Vec<(String, f64)> {
+fn read_array(counter: PDH_HCOUNTER) -> Vec<(String, f64)> {
     let mut buffer_size = 0u32;
     let mut item_count = 0u32;
     // 第一次以 None 取得所需緩衝大小。

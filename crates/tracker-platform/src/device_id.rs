@@ -65,7 +65,7 @@ mod win {
                 let subkey = to_wide(r"SOFTWARE\Microsoft\Cryptography");
                 let mut hkey = HKEY::default();
                 // `WIN32_ERROR::ok()` 轉為 `windows::core::Result<()>`，再以標準 `Result::ok()` 轉 `Option`。
-                RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(subkey.as_ptr()), 0u32, KEY_READ, &mut hkey).ok().ok()?;
+                RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(subkey.as_ptr()), None, KEY_READ, &mut hkey).ok().ok()?;
 
                 let value_name = to_wide("MachineGuid");
                 let mut buf = [0u16; 64];

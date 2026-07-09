@@ -5,10 +5,10 @@
 
 use std::cell::RefCell;
 
-use windows::core::VARIANT;
 use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED,
 };
+use windows::Win32::System::Variant::VARIANT;
 use windows::Win32::UI::Accessibility::{
     CUIAutomation, IUIAutomation, IUIAutomationValuePattern, TreeScope_Descendants,
     UIA_ControlTypePropertyId, UIA_EditControlTypeId, UIA_ValuePatternId,

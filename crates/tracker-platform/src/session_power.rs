@@ -19,7 +19,7 @@ use windows::Win32::System::Power::RegisterSuspendResumeNotification;
 use windows::Win32::System::RemoteDesktop::{WTSRegisterSessionNotification, NOTIFY_FOR_THIS_SESSION};
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, PostQuitMessage,
-    RegisterClassW, TranslateMessage, DEVICE_NOTIFY_WINDOW_HANDLE, HMENU, HWND_MESSAGE, MSG,
+    RegisterClassW, TranslateMessage, DEVICE_NOTIFY_WINDOW_HANDLE, HWND_MESSAGE, MSG,
     PBT_APMRESUMEAUTOMATIC, PBT_APMRESUMESUSPEND, PBT_APMSUSPEND, WINDOW_EX_STYLE, WINDOW_STYLE,
     WM_DESTROY, WM_POWERBROADCAST, WM_WTSSESSION_CHANGE, WNDCLASSW, WTS_SESSION_LOCK,
     WTS_SESSION_UNLOCK,
@@ -108,9 +108,9 @@ unsafe fn run_message_loop() {
         0,
         0,
         0,
-        HWND_MESSAGE,
-        HMENU::default(),
-        hinstance,
+        Some(HWND_MESSAGE),
+        None,
+        Some(hinstance),
         None,
     ) {
         Ok(h) => h,
@@ -121,7 +121,7 @@ unsafe fn run_message_loop() {
     let _ = RegisterSuspendResumeNotification(HANDLE(hwnd.0), DEVICE_NOTIFY_WINDOW_HANDLE);
 
     let mut msg = MSG::default();
-    while GetMessageW(&mut msg, HWND::default(), 0, 0).as_bool() {
+    while GetMessageW(&mut msg, None, 0, 0).as_bool() {
         let _ = TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }

@@ -22,7 +22,7 @@ pub fn set_autostart(enabled: bool, exe_path: &str) -> bool {
         let opened = RegCreateKeyExW(
             HKEY_CURRENT_USER,
             RUN_KEY,
-            0,
+            None,
             PCWSTR::null(),
             REG_OPTION_NON_VOLATILE,
             KEY_READ | KEY_WRITE,
@@ -37,7 +37,7 @@ pub fn set_autostart(enabled: bool, exe_path: &str) -> bool {
             let quoted = format!("\"{exe_path}\"");
             let wide: Vec<u16> = quoted.encode_utf16().chain(once(0)).collect();
             let bytes = std::slice::from_raw_parts(wide.as_ptr() as *const u8, wide.len() * 2);
-            RegSetValueExW(hkey, VALUE_NAME, 0, REG_SZ, Some(bytes)) == ERROR_SUCCESS
+            RegSetValueExW(hkey, VALUE_NAME, None, REG_SZ, Some(bytes)) == ERROR_SUCCESS
         } else {
             let r = RegDeleteValueW(hkey, VALUE_NAME);
             r == ERROR_SUCCESS || r == ERROR_FILE_NOT_FOUND
@@ -54,7 +54,7 @@ pub fn is_autostart_enabled() -> bool {
         let opened = RegCreateKeyExW(
             HKEY_CURRENT_USER,
             RUN_KEY,
-            0,
+            None,
             PCWSTR::null(),
             REG_OPTION_NON_VOLATILE,
             KEY_READ,

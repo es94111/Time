@@ -87,7 +87,7 @@ unsafe fn file_description(path: &str) -> Option<String> {
         return None;
     }
     let mut data = vec![0u8; size as usize];
-    GetFileVersionInfoW(file, 0, size, data.as_mut_ptr() as *mut c_void).ok()?;
+    GetFileVersionInfoW(file, None, size, data.as_mut_ptr() as *mut c_void).ok()?;
 
     // 1) 取語言／字碼頁。
     let trans_query: Vec<u16> = "\\VarFileInfo\\Translation".encode_utf16().chain(once(0)).collect();

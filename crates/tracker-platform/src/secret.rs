@@ -34,7 +34,7 @@ unsafe fn take_blob(blob: &CRYPT_INTEGER_BLOB) -> Vec<u8> {
     let slice = std::slice::from_raw_parts(blob.pbData, blob.cbData as usize);
     let out = slice.to_vec();
     // DPAPI 以 LocalAlloc 配置輸出，須以 LocalFree 釋放。
-    let _ = LocalFree(HLOCAL(blob.pbData as *mut core::ffi::c_void));
+    let _ = LocalFree(Some(HLOCAL(blob.pbData as *mut core::ffi::c_void)));
     out
 }
 
