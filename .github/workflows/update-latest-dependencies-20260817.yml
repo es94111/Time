@@ -19,19 +19,34 @@ jobs:
           set -euo pipefail
           if find . -type f -name package.json -not -path '*/node_modules/*' -print -quit | grep -q .; then
             npx --yes npm-check-updates@latest --deep --upgrade --target latest
-            while IFS= read -r -d '' lock; do dir="$(dirname "$lock")"; (cd "$dir" && npm install --package-lock-only --ignore-scripts --no-audit --no-fund); done < <(find . -type f -name package-lock.json -not -path '*/node_modules/*' -print0)
+            while IFS= read -r -d '' lock; do
+              dir="$(dirname "$lock")"
+              (cd "$dir" && npm install --package-lock-only --ignore-scripts --no-audit --no-fund)
+            done < <(find . -type f -name package-lock.json -not -path '*/node_modules/*' -print0)
           fi
-      - name: Upgrade Rust dependencies
+      - name: Upgrade Rust direct dependencies
         shell: bash
         run: |
           set -euo pipefail
-          if find . -type f -name Cargo.toml -print -quit | grep -q .; then
-            rustup update stable
-            rustup default stable
-            cargo install cargo-edit --locked
-            while IFS= read -r -d '' manifest; do cargo upgrade --manifest-path "$manifest" --incompatible allow --pinned allow; done < <(find . -type f -name Cargo.toml -print0)
-            while IFS= read -r -d '' lock; do manifest="$(dirname "$lock")/Cargo.toml"; [ ! -f "$manifest" ] || cargo update --manifest-path "$manifest"; done < <(find . -type f -name Cargo.lock -print0)
-          fi
+          rustup update stable
+          rustup default stable
+          cargo install cargo-edit --locked
+
+          # Update manifest constraints only first. Recursive updating inside cargo-edit
+          # previously failed on a yanked transitive crate before manifests were settled.
+          while IFS= read -r -d '' manifest; do
+            echo "Updating direct constraints in $manifest"
+            cargo upgrade --manifest-path "$manifest" --incompatible allow --pinned allow --recursive false
+          done < <(find . -type f -name Cargo.toml -print0)
+
+          # Let Cargo resolve lockfiles online after all direct constraints are updated.
+          while IFS= read -r -d '' lock; do
+            manifest="$(dirname "$lock")/Cargo.toml"
+            if [ -f "$manifest" ]; then
+              echo "Refreshing $lock"
+              cargo update --manifest-path "$manifest"
+            fi
+          done < <(find . -type f -name Cargo.lock -print0)
       - name: Commit dependency updates
         shell: bash
         run: |
@@ -40,5 +55,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "chore(deps): update dependencies to latest versions"
+          git commit -m "chore(deps): update dependencies to latest stable versions"
           git push origin HEAD:chore/update-dependencies-20260817
