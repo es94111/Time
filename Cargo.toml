@@ -30,16 +30,16 @@ jiff = { version = "0.2", features = ["serde"] }
 url = "2.5"
 # 加密與金鑰
 argon2 = "0.5"
-aes-gcm = "0.11"
+aes-gcm = "0.10"
 zeroize = { version = "1", features = ["derive"] }
-getrandom = "0.4"
+getrandom = "0.3"
 # 加密 SQLite（SQLCipher，bundled 含 OpenSSL，免裝系統 OpenSSL）
 rusqlite = { version = "0.40", features = ["bundled-sqlcipher-vendored-openssl"] }
 # 用戶端與遠端伺服器 HTTPS 通訊（research.md R7；非 Windows 原廠元件，見 Complexity Tracking）
 reqwest = { version = "0.13", features = ["json", "rustls"], default-features = false }
 # Microsoft 官方 Windows API 綁定
-windows = "0.62"
-windows-core = "0.62"
+windows = "0.61"
+windows-core = "0.61"
 # Tauri 2
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-build = "2"
