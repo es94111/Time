@@ -38,7 +38,7 @@ rusqlite = { version = "0.40", features = ["bundled-sqlcipher-vendored-openssl"]
 # 用戶端與遠端伺服器 HTTPS 通訊（research.md R7；非 Windows 原廠元件，見 Complexity Tracking）
 reqwest = { version = "0.13", features = ["json", "rustls"], default-features = false }
 # Microsoft 官方 Windows API 綁定
-windows = "0.61"
+windows = "0.62"
 windows-core = "0.61"
 # Tauri 2
 tauri = { version = "2", features = ["tray-icon"] }
