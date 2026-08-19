@@ -4606,7 +4606,7 @@ dependencies = [
  "aes-gcm",
  "argon2",
  "csv",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "jiff",
  "rusqlite",
  "serde",

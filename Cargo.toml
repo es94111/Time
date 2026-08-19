@@ -32,7 +32,7 @@ url = "2.5"
 argon2 = "0.5"
 aes-gcm = "0.10"
 zeroize = { version = "1", features = ["derive"] }
-getrandom = "0.3"
+getrandom = "0.4"
 # 加密 SQLite（SQLCipher，bundled 含 OpenSSL，免裝系統 OpenSSL）
 rusqlite = { version = "0.40", features = ["bundled-sqlcipher-vendored-openssl"] }
 # 用戶端與遠端伺服器 HTTPS 通訊（research.md R7；非 Windows 原廠元件，見 Complexity Tracking）
