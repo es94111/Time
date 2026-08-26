@@ -30,7 +30,7 @@ jiff = { version = "0.2", features = ["serde"] }
 url = "2.5"
 # 加密與金鑰
 argon2 = "0.5"
-aes-gcm = "0.10"
+aes-gcm = "0.11"
 zeroize = { version = "1", features = ["derive"] }
 getrandom = "0.3"
 # 加密 SQLite（SQLCipher，bundled 含 OpenSSL，免裝系統 OpenSSL）
