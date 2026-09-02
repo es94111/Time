@@ -29,7 +29,7 @@ jiff = { version = "0.2", features = ["serde"] }
 # URL → 主機名解析
 url = "2.5"
 # 加密與金鑰
-argon2 = "0.5"
+argon2 = "0.6"
 aes-gcm = "0.10"
 zeroize = { version = "1", features = ["derive"] }
 getrandom = "0.3"
