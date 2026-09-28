@@ -54,7 +54,7 @@ jobs:
       # tauri-action 會執行 tauri.conf.json 的 beforeBuildCommand
       # （npm --prefix ../ui run build）以建置前端，接著建置 Windows exe
       - name: 建置 Tauri（Windows exe / NSIS 安裝檔）
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
