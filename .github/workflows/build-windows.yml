@@ -65,7 +65,7 @@ jobs:
           releaseBody: '本安裝檔由 GitHub Actions 自動建置產生。'
 
       - name: 上傳安裝檔為 Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-installer
           if-no-files-found: error
